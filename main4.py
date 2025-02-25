@@ -5,12 +5,9 @@ from docx.shared import Pt, Cm
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 from docx.enum.section import WD_ORIENT
 from openpyxl import load_workbook
-from datetime import datetime
 
-def formatar_data(data, variavel):
-    if isinstance(data, datetime) and variavel in ["data_selagem", "data_protocolo"]:
-        return data.strftime("%dd/%mm/%YYYY")
-    return str(data)
+def formatar_milhar(numero):
+    return "{:,}".format(numero).replace(",", ".")
 
 def preencher_texto(texto_base, dados):
     texto_preenchido = texto_base
@@ -52,12 +49,12 @@ estilo_fonte.size = Pt(11)
 # Itera sobre as linhas do Excel
 for row in sheet.iter_rows(min_row=2, values_only=True):
     dados = {
-        "mat": row[0],
-        "data_selagem": formatar_data(row[1], "data_selagem"),
+        "mat": formatar_milhar(row[0]),
+        "data_selagem": str(row[1]),
         "n_protocolo": row[2],
-        "data_protocolo": formatar_data(row[3], "data_protocolo"),
+        "data_protocolo": str(row[3]),
         "prot_cnib": row[4],
-        "data_cnib": formatar_data(row[5], "data_cnib"),
+        "data_cnib": str(row[5]),
         "n_vara": row[6],
         "n_processo": row[7],
         "selo_digital": row[8],
@@ -65,22 +62,13 @@ for row in sheet.iter_rows(min_row=2, values_only=True):
 
     texto_preenchido = preencher_texto(texto_base, dados)
 
-    # Separa as partes do texto para aplicar o negrito
-    partes = texto_preenchido.split("baixar a restrição de indisponibilidade")
-    parte1 = partes[0]
-    parte2 = partes[1]
-
-    partes_av_acima = parte2.split("AV-** acima.")
-    parte2_1 = partes_av_acima[0]
-    parte2_2 = partes_av_acima[1]
-
-    partes_selo = parte2_2.split("SELO DE AUTENTICIDADE: ")
-    parte2_2_1 = partes_selo[0]
-    parte2_2_2 = partes_selo[1]
-
-    partes_selo_input = parte2_2_2.split('.')
-    selo_input = partes_selo_input[0]
-    selo_resto = '.' + partes_selo_input[1] if len(partes_selo_input)>1 else ''
+    # Define as posições dos trechos em negrito
+    posicoes_negrito = [
+        (0, texto_preenchido.find(" - Em ")),
+        (texto_preenchido.find("baixar a restrição de indisponibilidade"), texto_preenchido.find(" constante da AV-** acima.")),
+        (texto_preenchido.find("AV-** acima."), texto_preenchido.find("SELO DE AUTENTICIDADE: ")),
+        (texto_preenchido.find("SELO DE AUTENTICIDADE: "), texto_preenchido.find(". Não foram cobrados emolumentos")),
+    ]
 
     # Adiciona os parágrafos com formatação em negrito
     p = document.add_paragraph()
@@ -91,31 +79,23 @@ for row in sheet.iter_rows(min_row=2, values_only=True):
     p.paragraph_format.space_after = Pt(0)
     p.paragraph_format.line_spacing = 1.0
 
-    run1 = p.add_run(parte1)
-    run1.bold = True
-
-    run2 = p.add_run("baixar a restrição de indisponibilidade")
-    run2.bold = True
-
-    run3 = p.add_run(parte2_1)
-
-    run4 = p.add_run("AV-** acima.")
-    run4.bold = True
-
-    run5 = p.add_run(parte2_2_1)
-
-    run6 = p.add_run("SELO DE AUTENTICIDADE: " + selo_input)
-    run6.bold = True
-
-    run7 = p.add_run(selo_resto)
+    pos_atual = 0
+    for inicio, fim in posicoes_negrito:
+        if inicio > pos_atual:
+            p.add_run(texto_preenchido[pos_atual:inicio])
+        run = p.add_run(texto_preenchido[inicio:fim])
+        run.bold = True
+        pos_atual = fim
+    if pos_atual < len(texto_preenchido):
+        p.add_run(texto_preenchido[pos_atual:])
 
     # Adiciona a parte faltante do texto com o ponto final
-    p.add_run(".\nEu,__________Oficial que fiz digitar e conferi.")
-    p.add_run("\n") # Adiciona uma quebra de linha após o ponto final
+    #p.add_run(".\nEu,__________Oficial que fiz digitar e conferi.")
+    #p.add_run("\n") # Adiciona uma quebra de linha após o ponto final
 
     # Adiciona os underlines
     p.add_run("\n")
-    p.add_run("____________________________________________________________________________")
+    #p.add_run("____________________________________________________________________________")
 
     # Adiciona duas quebras de linha para separar as minutas
     if row != list(sheet.iter_rows(min_row=2, values_only=True))[-1]:
