@@ -2,3 +2,6 @@ Aprendendo GIT e GITHUB, vamos pra cima.
 
 
 Mais alterações no código, vamos fazer o commit e executar o comando push
+
+
+Testando a banch, foi criado uma nova branch, vamos conseguir verificar essa alteração em uma ambiente controlado.
