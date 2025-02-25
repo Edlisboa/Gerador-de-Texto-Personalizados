@@ -1,1 +1,4 @@
 Aprendendo GIT e GITHUB, vamos pra cima.
+
+
+Mais alterações no código, vamos fazer o commit e executar o comando push
