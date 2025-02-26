@@ -36,7 +36,7 @@ ____________________________________________________________________________"""
 
 # Caminho do arquivo Excel
 desktop = os.path.join(os.path.join(os.environ['USERPROFILE']), 'Desktop')
-caminho_excel = os.path.join(desktop, 'minuta automatica', 'produção', 'dados.xlsx')
+caminho_excel = os.path.join(desktop, 'minuta automatica', 'minuta automatica', 'produção', 'dados.xlsx')
 
 # Carrega o arquivo Excel e seleciona a "Planilha 1"
 workbook = load_workbook(caminho_excel)
